@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo</title>
+  <link href="/layer/css/layui.css" rel="stylesheet">
+  <script src="/layer/layui.js"></script> 
+  <style>
+    body {
+      background-color: azure;
+    }
+    .spinner {
+  margin: 100px auto 0;
+  width: 150px;
+  text-align: center;
+}
+ 
+.spinner > div {
+  width: 30px;
+  height: 30px;
+  background-color: #67CF22;
+ 
+  border-radius: 100%;
+  display: inline-block;
+  -webkit-animation: bouncedelay 1.4s infinite ease-in-out;
+  animation: bouncedelay 1.4s infinite ease-in-out;
+  /* Prevent first frame from flickering when animation starts */
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+ 
+.spinner .bounce1 {
+  -webkit-animation-delay: -0.32s;
+  animation-delay: -0.32s;
+}
+ 
+.spinner .bounce2 {
+  -webkit-animation-delay: -0.16s;
+  animation-delay: -0.16s;
+}
+ 
+@-webkit-keyframes bouncedelay {
+  0%, 80%, 100% { -webkit-transform: scale(0.0) }
+  40% { -webkit-transform: scale(1.0) }
+}
+ 
+@keyframes bouncedelay {
+  0%, 80%, 100% {
+    transform: scale(0.0);
+    -webkit-transform: scale(0.0);
+  } 40% {
+    transform: scale(1.0);
+    -webkit-transform: scale(1.0);
+  }
+}
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="spinner">
+      <div class="bounce1"></div>
+      <div class="bounce2"></div>
+      <div class="bounce3"></div>
+    </div>
+  </div>
+  <div id="showing" tyle="display: none;">
+<table class="layui-hide" id="ID-table-demo-data"></table>
+<script type="text/html" id="del">
+<div>
+    <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" onclick="deluser('{{d.name}}','{{d.is_admin_bool}}')">删除</button>
+</div>
+</div>
+</script>
+<script type="text/html" id="toolbarDemo">
+  <div class="layui-btn-container">
+      <button class="layui-btn layui-btn-sm" onclick="reload()">刷新</button>
+      <span id="ID-test-iframe-mark"></span>
+  </div>
+</script>
+<script>
+
+fetch('/admin/api/alluser', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+}).then(res => res.json())
+  .then(data => {
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('showing').style.display = 'block'
+    useData = data.data
+    for (let i = 0; i < useData.length; i++) {
+      useData[i].is_admin_bool = useData[i].is_admin
+      useData[i].is_admin = useData[i].is_admin ? '是' : '否'
+      useData[i].ID = useData[i].ID.toString()
+      useData[i].CreatedAt = new Date(useData[i].CreatedAt).toLocaleString()
+    }
+    layui.use('table', function(){
+  var table = layui.table;
+  // 已知数据渲染
+  var inst = table.render({
+    elem: '#ID-table-demo-data',
+    toolbar: '#toolbarDemo',
+    cols: [[ //标题栏
+      {field: 'ID', title: 'ID', width: 80, sort: true},
+      {field: 'name', title: '用户', width: 200},
+      {field: 'CreatedAt', title: '创建时间', width: 200},
+      {field: 'adminSerct', title: '管理员注册密钥', width: 150},
+      {field: 'is_admin', title: '管理员', minWidth:80},
+      {field: '删除',toolbar: '#del', title: '删除', width: 100}
+      
+    ]],
+    data: useData,
+    //skin: 'line', // 表格风格
+    //even: true,
+    page: true, // 是否显示分页
+    limits: [5,10, 15],
+    limit: 5 // 每页默认显示的数量,
+  });
+});
+  })
+  .catch(err => {
+    console.log(err)
+  })
+
+function reload(){
+  document.location.reload()
+}
+</script>
+<script>
+  var layer = layui.layer;
+  
+
+function deluser(name,is_admin_bool){
+    // console.log(name)
+    // console.log(is_admin_bool)
+    
+
+    if (is_admin_bool =='true'){
+        // layer.msg('管理员不可删除')
+        localStorage.setItem('delAdminName', name);
+        layer.open({
+        type: 2, 
+        content: '/admin/delAdmin',
+        title: '您正在删除管理员 ! ! !'
+        });
+    return
+}
+        
+    
+    layer.confirm('确定删除用户'+name+'?', {icon: 3, title:'提示'}, function(){
+        fetch('/admin/api/deleteuser/'+name, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(res => res.json()).then(data =>{
+            if (data.success){
+                layer.msg('删除成功',{icon: 1})
+                // document.location.reload()
+                setTimeout(() => {
+                    document.location.reload()
+                }, 1000);
+            }
+            else{
+                layer.msg('删除失败',{icon: 2})
+            }
+        })
+    }, function(){
+        layer.msg('已取消',{icon:1})
+    });
+}
+</script>
+
+</body>
+</html>

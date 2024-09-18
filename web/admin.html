@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>后台管理</title>
+    <link href="/layer/css/layui.css" rel="stylesheet">
+    <script src="/layer/layui.js"></script> 
+<style>
+        body {
+            font-family: '微软雅黑', sans-serif;
+            /* background-color: #96d590; */
+            background-image: url('/back.jpg');
+            background-size: cover;
+        }
+        .all_content {
+            width: 80%;
+            margin: 0 auto;
+            background-color: #343232;
+
+        }
+        #userinfo {
+            text-align: right;
+            margin-right: 100px;
+        }
+        #username {
+            color: #fff;
+            font-size: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .show-contanier {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 10px 0;
+            height: 100vh;
+        }
+        .nav-tree {
+          height: 100vh;
+        }
+        iframe{
+          /* 剩余的所有宽度 */
+          flex: 1;
+          height: 100vh;
+          /* 去除边框 */
+          border: none;
+
+        }
+        .layui-nav-item{
+          /* 鼠标小手 */
+          cursor: pointer;
+        }
+        /* .toindex{
+          margin-left: 20px;
+        } */
+</style>
+
+</head>
+
+<body>
+<div class="all_content layui-col-space15">
+    <div class="header">
+      <div>
+        &nbsp;
+        <button type="button" class="layui-btn  layui-btn-danger toindex" onclick="window.location.href = '/';">&lt; 回到网站</button>
+      </div>
+        <div id="userinfo">
+            <div id="username">欢迎你，</div>
+        </div>
+    </div>
+    <div class="show-contanier">
+      <ul class="layui-nav layui-nav-tree nav-tree">
+        <li  class="layui-nav-item" ><a id= 'first-con' onclick="document.getElementById('content').src='/admin/user'">用户管理</a></li>
+        <li class="layui-nav-item" ><a onclick="document.getElementById('content').src='/admin/product'">产品管理</a></li>
+      </ul>
+      <iframe id="content" src=""> </iframe>
+    </div>
+</div>    
+<script>
+  document.getElementById('first-con').click();
+</script>
+<script>
+var layer = layui.layer;
+    fetch('/api/userinfo', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }})
+    .then(function(response) {
+      if (response.status != 200) {
+        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+        return response.json();
+    }).then(function(data) {
+        if (data.success) {
+            // 显示用户信息
+            document.getElementById('username').innerText += data.data.name;
+            localStorage.setItem('myname', data.data.name);
+              document.getElementById('username').innerText += ' (管理员)'
+            // 退出登录
+            document.getElementById('username').innerHTML += '  <button type="button" class="layui-btn layui-btn-sm layui-btn-danger"" lay-on="confirm">退出登录</button>';
+        } else {
+            document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+    }).catch(function(error) {
+        console.error('Error:', error);
+    });
+</script>
+<script>
+
+layer.msg('欢迎使用后台管理系统', {icon: 6, time: 2000});
+    layui.use(function(){
+  
+  var util = layui.util;
+  // 批量事件
+  util.on('lay-on', {
+    alert: function(){
+      layer.alert('购买请邮箱联系:'+" support@yuxiao.cloud");
+    },
+    confirm: function(){
+      layer.confirm('您确定退出登录吗?', {
+        btn: ['确定', '关闭'] //按钮
+      }, function(){
+        // 清除cookie
+        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        localStorage.removeItem('token');
+        layer.msg('已退出登录', {icon: 1});
+        setTimeout(function() {
+            window.location.href = '/';
+            // 刷新
+            window.location.reload();
+        }, 1000);
+      }, function(){
+        layer.msg('已取消', {icon: 1});
+      });
+    }
+});}
+    );
+
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo</title>
+  <link href="/layer/css/layui.css" rel="stylesheet">
+  <script src="/layer/layui.js"></script> 
+  <style>
+    body {
+      background-color: azure;
+    }
+    .spinner {
+  margin: 100px auto 0;
+  width: 150px;
+  text-align: center;
+}
+ 
+.spinner > div {
+  width: 30px;
+  height: 30px;
+  background-color: #67CF22;
+ 
+  border-radius: 100%;
+  display: inline-block;
+  -webkit-animation: bouncedelay 1.4s infinite ease-in-out;
+  animation: bouncedelay 1.4s infinite ease-in-out;
+  /* Prevent first frame from flickering when animation starts */
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+ 
+.spinner .bounce1 {
+  -webkit-animation-delay: -0.32s;
+  animation-delay: -0.32s;
+}
+ 
+.spinner .bounce2 {
+  -webkit-animation-delay: -0.16s;
+  animation-delay: -0.16s;
+}
+ 
+@-webkit-keyframes bouncedelay {
+  0%, 80%, 100% { -webkit-transform: scale(0.0) }
+  40% { -webkit-transform: scale(1.0) }
+}
+ 
+@keyframes bouncedelay {
+  0%, 80%, 100% {
+    transform: scale(0.0);
+    -webkit-transform: scale(0.0);
+  } 40% {
+    transform: scale(1.0);
+    -webkit-transform: scale(1.0);
+  }
+}
+  </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="spinner">
+          <div class="bounce1"></div>
+          <div class="bounce2"></div>
+          <div class="bounce3"></div>
+        </div>
+    </div>
+      <div id="showing" tyle="display: none;">
+<table class="layui-hide" id="ID-table-demo-data"></table>
+</div>
+<script type="text/html" id="del">
+<div>
+    <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" onclick="deluser('{{d.name}}','{{d.is_on_sale_bool}}')">删除</button>
+</div>
+</script>
+<script type="text/html" id="changeSale">
+<div>
+    {{d.is_on_sale_bool==true ? "正在热卖":"已下架"}}
+    <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" onclick="changeSale('{{d.name}}','{{d.is_on_sale_bool}}')">{{ d.is_on_sale_bool==true ? "下架":"重新上架"}}</button>
+</script>
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" onclick="createProduct()">添加产品</button>
+        <span id="ID-test-iframe-mark"></span>
+    </div>
+</script>
+<script>
+    function renderTable(){
+                
+        fetch('/api/products', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(res => res.json())
+        .then(data => {
+            useData = data.data
+            for (let i = 0; i < useData.length; i++) {
+                useData[i].is_on_sale_bool = useData[i].is_on_sale
+                useData[i].is_on_sale = useData[i].is_on_sale ? '是' : '否'
+                useData[i].ID = useData[i].ID.toString()
+                useData[i].CreatedAt = new Date(useData[i].CreatedAt).toLocaleString()
+            }
+            document.getElementById('loading').style.display = 'none'
+            document.getElementById('showing').style.display = 'block'
+            layui.use('table', function(){
+        var table = layui.table;
+        // 已知数据渲染
+        var inst = table.render({
+            id:"productTable",
+            toolbar: '#toolbarDemo',
+            elem: '#ID-table-demo-data',
+            cols: [[ //标题栏
+            {field: 'ID', title: 'ID', width: 80},
+            {field: 'name', title: '产品', width: 200},
+            {field: 'price', title: '价格', width: 100},
+            {field: 'CreatedAt', title: '创建时间', width: 200},
+            {field: 'is_on_sale', title: '上架', minWidth:180,toolbar: '#changeSale'},
+            {field: '删除',toolbar: '#del', title: '删除', width: 100}
+            
+            ]],
+            data: useData,
+            //skin: 'line', // 表格风格
+            //even: true,
+            page: true, // 是否显示分页
+            limits: [5, 10, 15],
+            limit: 5 // 每页默认显示的数量,
+        });
+
+        });
+        })
+        .catch(err => {
+            console.log(err)
+        })
+    }
+    renderTable()
+</script>
+<script>
+function createProduct(){
+    layui.use('layer', function(){
+        var layer = layui.layer;
+        layer.open({
+        type: 2, 
+        content: '/admin/createProduct',
+        title: '添加产品'
+
+}); 
+    });
+}
+function deluser(name,is_sale_bool){
+    // console.log(name)
+    // console.log(is_admin_bool)
+    layui.use(function(){
+    var layer = layui.layer;
+    var util = layui.util;
+    util.on('lay-on',{
+
+    })})
+    if (is_sale_bool =='true'){
+        layer.msg('上架产品不可直接删除',{icon: 4})
+        return
+    }
+    layer.confirm('确定删除产品'+name+'?', {icon: 3, title:'提示'}, function(){
+        fetch('/admin/api/deleteproduct/'+name, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(res => res.json()).then(data =>{
+            if (data.success){
+                layer.msg('删除成功',{icon: 1})
+                setTimeout(() => {
+                document.location.reload()
+                }, 1000);
+            }
+            else{
+                layer.msg('删除失败',{icon: 2})
+            }
+        })
+    }, function(){
+        layer.msg('已取消',{icon: 1})
+    });
+}
+function changeSale(name,is_sale_bool){
+    // console.log(name)
+    // console.log(is_admin_bool)
+    layui.use(function(){
+    var layer = layui.layer;
+    var util = layui.util;
+    util.on('lay-on',{
+
+    })})
+    layer.confirm('确定'+(is_sale_bool=='true'?'下架':'上架')+'产品'+name+'?', {icon: 3, title:'提示'}, function(){
+        fetch('/admin/api/changeSale/'+name, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(res => res.json()).then(data =>{
+            if (data.success){
+                layer.msg('操作成功',{time:500,icon: 1})
+                setTimeout(() => {
+                    // 刷新页面
+                    document.location.reload()
+                }, 500);
+            }
+            else{
+                layer.msg('操作失败',{icon: 2})
+            }
+        })
+    }, function(){
+        layer.msg('已取消',{icon: 1})
+    });
+}
+</script>
+
+</body>
+</html>

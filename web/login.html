@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>登录</title>
+    <style>
+        body {
+            font-family: '微软雅黑', sans-serif;
+            /* background-color: #343232;
+             */
+            background-image: url('/back.jpg');
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 300px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+        }
+        button {
+            width: 30%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: #fff;
+            cursor: pointer;
+        }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .button-container {
+            display: flex;
+            
+            justify-content: space-around;
+        }
+
+    </style>
+        <link href="/layer/css/layui.css" rel="stylesheet">
+        <script src="/layer/layui.js"></script> 
+</head>
+<body>
+    <div class="container">
+        <h2>登录账号</h2>
+        <br>
+        <div class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-input-group">
+                  <div class="layui-input-split layui-input-prefix">
+                    账号
+                  </div>
+                  <input type="text" placeholder="" class="layui-input" id="username">
+                </div>
+              </div>
+              <div class="layui-form-item">
+                <div class="layui-input-group">
+                  <div class="layui-input-split layui-input-prefix">
+                    密码
+                  </div>
+                  <input type="text" placeholder="" class="layui-input" id="password">
+                </div>
+              </div>
+        </div>
+        <div class="button-container">
+        <button id="login" class="layui-btn">登录</button>
+        <button id="signup" class="layui-btn layui-bg-blue">注册</button>
+        </div>
+    </div>
+
+</body>
+<script>
+    var layer = layui.layer;
+    document.getElementById('login').addEventListener('click', function() {
+        var username = document.getElementById('username').value;
+        var password = document.getElementById('password').value;
+        if (!username || !password) {
+            layer.msg('用户名或密码不能为空',{time:1000,icon:2});
+            return;
+        }
+        fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: username, password: password }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                layer.msg('登录成功',{time:1000,icon:1});
+                // 登录成功，可以重定向到主页或其他页面
+                localStorage.setItem('token', data.token);
+                let date = new Date();
+                date.setDate(date.getDate() + 1); // 设置日期为当前日期的后一天
+                document.cookie = `token=${data.token}; expires=${date.toUTCString()}; path=/`; // 在cookie中保存token
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            } else {
+                // 显示错误信息
+                layer.msg("登录失败：" + data.error,{time:3000,icon:2});
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    });
+    
+    document.getElementById('signup').addEventListener('click', function() {
+        window.location.href = '/signup';
+    });
+</script>
+</html>

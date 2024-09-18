@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>商品展示</title>
+    <link href="/layer/css/layui.css" rel="stylesheet">
+    <script src="/layer/layui.js"></script> 
+<style>
+        body {
+            font-family: '微软雅黑', sans-serif;
+            /* background-color: #96d590; */
+            background-image: url('/back.jpg');
+            background-size: cover;
+        }
+        .all_content {
+            width: 80%;
+            margin: 0 auto;
+            
+
+        }
+        #userinfo {
+            text-align: right;
+            margin-right: 100px;
+        }
+        #username {
+            color: #fff;
+            font-size: 20px;
+        }
+        .onSale {
+            color: #fff;
+            font-size: 20px;
+            margin-left: 100px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            background-color: #343232;
+            /* 下面圆润 */
+            border-bottom-left-radius: 30px;  /* 左下角圆润 */
+    border-bottom-right-radius: 30px; /* 右下角圆润 */
+        }
+        .product-Conatiner {
+            width: 20%;           
+        }
+        .container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+    .katou{
+        /* 文本溢出 底部滑动栏 */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+
+</style>
+
+</head>
+
+<body>
+<div class="all_content layui-col-space15">
+    <div class="header">
+        <div class="onSale">
+            当前货品数量: <span id="product-num"></span>
+            在售数量: <span id="onsale">
+        </div>
+        <div id="userinfo">
+            <div id="username">欢迎你，</div>
+        </div>
+    </div>
+    <div class=" mygray" style="padding: 16px;height: 100vh;">
+        <div id="products" class="layui-row layui-col-space15 container" >
+        </div>
+    </div>
+</div>    
+<script>
+    var layer = layui.layer;
+    fetch('/api/userinfo', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }})
+    .then(function(response) {
+        if (response.status != 200) {
+            document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+        return response.json();
+    }).then(function(data) {
+        if (data.success) {
+            // 显示用户信息
+            document.getElementById('username').innerText += data.data.name;
+            layer.msg("欢迎你,"+data.data.name, {icon: 1});
+            if (data.data.is_admin) {
+                document.getElementById('username').innerText += ' (管理员)'
+                document.getElementById('username').innerHTML += ' &nbsp;<a href="/admin" class="layui-btn layui-btn-sm layui-btn-danger">进入管理后台</a>';
+            }
+            // 退出登录
+            document.getElementById('username').innerHTML += '&nbsp;<button type="button" class="layui-btn layui-btn-sm layui-btn-danger"" lay-on="confirm">退出登录</button>';
+        } else {
+            // 显示错误信息
+            // 清空cookie
+            document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+    }).catch(function(error) {
+        console.error('Error:', error);
+    });
+</script>
+<script>
+    fetch('/api/products', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response =>{
+        // console.log(response);
+        if (response.status != 200) {
+            document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+        return response.json()})
+    .then(data => {
+        // console.log(data);
+        const productsDiv = document.getElementById('products');
+        document.getElementById('product-num').innerText += data.data.length.toString();
+        let onSale = 0;
+        data.data.forEach(product => {
+            const productContanier = document.createElement('div');
+            productContanier.className = 'layui-col-md6 product-Conatiner';
+            const productCard = document.createElement('div');
+            productCard.className = 'layui-card';
+            productContanier.appendChild(productCard);
+            const productName = document.createElement('div');
+            productName.className = 'layui-card-header katou';
+            productName.innerText = product.name;
+            productCard.appendChild(productName);
+
+            const productPrice = document.createElement('div');
+            productPrice.className = 'layui-card-body';
+            productPrice.innerText = '价格: ' + product.price;
+            productCard.appendChild(productPrice);
+
+            if (product.is_on_sale) {
+                productPrice.innerHTML += '<br>'+'<button type="button" class="layui-btn layui-btn-sm" lay-on="alert">购买</button>';
+                onSale++;
+            }
+            else {
+                productPrice.innerHTML += '<br>'+'<button class="layui-btn layui-btn-sm layui-btn-disabled">已下架</button>';
+            }
+
+            productsDiv.appendChild(productContanier);
+        });
+        document.getElementById('onsale').innerText += onSale.toString();
+    });
+    layui.use(function(){
+
+
+  var util = layui.util;
+  // 批量事件
+  util.on('lay-on', {
+    alert: function(){
+        layer.alert('购买请联系邮箱:'+" support@yuxiao.cloud",{icon: 6},function(){
+            // 剪贴板放置邮箱
+            navigator.clipboard.writeText('support@yuxiao.cloud').then(function() {
+                /* clipboard successfully set */
+                layer.msg('邮箱已复制到剪贴板,期待您的联系', {icon: 1});
+            }, function() {
+                /* clipboard write failed */
+                // layer.msg('邮箱复制失败', {icon: 2});
+                console.log('邮箱复制失败');
+            });
+    })},
+    confirm: function(){
+      layer.confirm('您确定退出登录吗?', {
+        btn: ['确定', '关闭'] //按钮
+      }, function(){
+        // 清除cookie
+        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        localStorage.removeItem('token');
+        layer.msg('已退出登录', {icon: 1});
+        setTimeout(function() {
+            window.location.href = '/login';
+        }, 1000);
+      }, function(){
+        layer.msg('已取消', {icon: 1});
+      });
+    }
+});}
+    );
+
+</script>
+</body>
+</html>

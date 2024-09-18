@@ -1,0 +1,56 @@
+<head>
+    <link href="/layer/css/layui.css" rel="stylesheet">
+    </head>
+    
+    
+    
+    
+    
+    <div class="layui-form-item">
+        <div class="layui-input-group">
+          <div class="layui-input-split layui-input-prefix">
+            Root密钥
+          </div>
+          <input type="text" placeholder="请谨慎操作" class="layui-input" id="rootSercet">
+        </div>
+    </div>
+    <br>
+    <div style="display: flex;justify-content: space-around;">
+    <button onclick="submitProduct()" class="layui-btn layui-bg-blue ">提交</button>
+    <button onclick="cancle()" class="layui-btn ">取消</button>
+    </div>
+    
+    <script>
+        var index = parent.layer.getFrameIndex(window.name); //获取窗口索引
+    function submitProduct() {
+        var rootSercet = document.getElementById('rootSercet').value;
+        if ( rootSercet == '') {
+            parent.layer.msg('Root密钥为空',{time:1000,icon:2});
+            return;
+        }
+        adminName=localStorage.getItem('delAdminName');
+        fetch('/admin/api/admin/del', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                rootSerct: rootSercet,
+                name:adminName
+            })
+        }).then(res => res.json()).then(data => {
+            if (data.success) {
+                parent.layer.msg('删除成功');
+                parent.layer.close(index);
+                localStorage.removeItem('delAdminName');
+                parent.location.reload();
+            } else {
+                parent.layer.msg('删除失败,'+data.error,{icon:2})
+            }
+        })
+    }
+    function cancle() {
+        parent.layer.msg('已取消删除',{time:1000,icon:1});
+        parent.layer.close(index);
+    }
+    </script>

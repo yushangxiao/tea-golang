@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>注册</title>
+    <link href="/layer/css/layui.css" rel="stylesheet">
+    <script src="/layer/layui.js"></script> 
+    <style>
+        body {
+            font-family: '微软雅黑', sans-serif;
+            background-image: url('/back.jpg');
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 300px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+        }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            width: 48%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+
+
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button#signup {
+            background-color: #6c757d;
+        }
+        button#signup:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>注册账号</h2>
+        <input type="text" id="username" placeholder="账号">
+        <input type="password" id="password" placeholder="密码">
+        <input type="text" id="adminSerct" placeholder="管理密钥(选填，注册管理员时使用)">
+        <div class="button-container">
+            <button type="button" class="layui-btn layui-bg-blue" id="signup">注册</button>
+            <button type="button" class="layui-btn" onclick="tologin()">回到登录</button>
+        </div>
+    </div>
+
+</body>
+<script>
+
+    var layer = layui.layer;
+
+    function tologin(){
+        window.location.href = '/login';
+        // window.reload();
+    }
+    document.getElementById('signup').addEventListener('click', function() {
+        var username = document.getElementById('username').value;
+        var password = document.getElementById('password').value;
+        var adminSerct = document.getElementById('adminSerct').value;
+        if (!username || !password) {
+            layer.msg('用户名和密码不能为空',{time:1000,icon:2});
+            return;
+        }
+        fetch('/api/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({"name": username, "password": password, "adminSerct": adminSerct}),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                layer.msg('注册成功,即将跳转到登录页面',{time:1000,icon:1});
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 1000);
+            } else {
+                layer.msg("注册失败：" + data.error,{time:3000,icon:2});
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    });
+</script>
+</html>
